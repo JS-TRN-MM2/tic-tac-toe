@@ -1,13 +1,24 @@
-import { StatusBar } from "expo-status-bar";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { ReactElement } from "react";
+import { StyleSheet, View } from "react-native";
 
-export default function App() {
+import { Text, AppBootstrap } from "@components";
+
+export default function App(): ReactElement {
     return (
-        <View style={styles.container}>
-            <Text>Open up App.tsx to start working on your app!</Text>
-            <StatusBar style="auto" />
-        </View>
+        <AppBootstrap>
+            <View style={styles.container}>
+                <Text
+                    onPress={() => {
+                        alert(true);
+                    }}
+                    style={{
+                        fontSize: 25
+                    }}
+                >
+                    jkhlkjhlk<Text weight="700">jkhlkjhlkjhl</Text>
+                </Text>
+            </View>
+        </AppBootstrap>
     );
 }
 
