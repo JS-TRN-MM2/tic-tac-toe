@@ -1,5 +1,4 @@
 import React, { ReactNode, ReactElement } from "react";
-import { View, Text } from "react-native";
 import {
     useFonts,
     DeliusUnicase_400Regular,
