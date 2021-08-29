@@ -1,25 +1,67 @@
-import React, { ReactElement } from "react";
-import { SafeAreaView } from "react-native";
+import React, { ReactElement, useState, useEffect } from "react";
+import { BackHandler, SafeAreaView } from "react-native";
 import { GradientBackground } from "@components";
 import styles from "./single-player-game.styles";
 import { Board } from "@components";
-import { printFormattedBoard, isEmpty, isFull, getAvailableMoves, BoardState } from "@utils";
+import { BoardState, isTerminal, getBestMove, isEmpty } from "@utils";
 
 export default function Game(): ReactElement {
-    const b: BoardState = ["x", "o", "o", "o", "x", "x", "o", "x", "o"];
+    // prettier-ignore
+    const [state, setState] = useState<BoardState>([
+        null, null, null,
+        null, null, null,
+        null, null, null
+    ]);
+    const [turn, setTurn] = useState<"HUMAN" | "BOT">(Math.random() < 0.5 ? "HUMAN" : "BOT");
+    const [isHumanMaximizing, setIsHumanMaximizing] = useState<boolean>(true);
 
-    printFormattedBoard(b);
-    console.log(isEmpty(b));
-    console.log(isFull(b));
-    console.log(getAvailableMoves(b));
+    const gameResult = isTerminal(state);
+
+    const insertCell = (cell: number, symbol: "x" | "o"): void => {
+        const stateCopy: BoardState = [...state];
+        if (stateCopy[cell] || isTerminal(stateCopy)) return;
+        stateCopy[cell] = symbol;
+        setState(stateCopy);
+    };
+
+    const handleOnCellPressed = (cell: number): void => {
+        if (turn !== "HUMAN") return;
+        insertCell(cell, isHumanMaximizing ? "x" : "o");
+        setTurn("BOT");
+    };
+
+    useEffect(() => {
+        if (gameResult) {
+            //handle game finished
+            alert("Game Over");
+        } else {
+            // is it the computer's turn; if so,
+            if (turn === "BOT") {
+                // don't need to call getBestMove on an empty screen, i.e. first move
+                if (isEmpty(state)) {
+                    const centerAndCorners = [0, 2, 6, 8, 4];
+                    const firstMove =
+                        centerAndCorners[Math.floor(Math.random() * centerAndCorners.length)];
+                    insertCell(firstMove, "x");
+                    setIsHumanMaximizing(false);
+                    setTurn("HUMAN");
+                } else {
+                    const best = getBestMove(state, !isHumanMaximizing, 0, -1);
+                    insertCell(best, isHumanMaximizing ? "o" : "x");
+                    setTurn("HUMAN");
+                }
+            }
+        }
+    }, [state, turn]);
     return (
         <GradientBackground>
             <SafeAreaView style={styles.container}>
                 <Board
-                    onCellPressed={index => {
-                        alert(index);
+                    disabled={Boolean(isTerminal(state)) || turn !== "HUMAN"}
+                    onCellPressed={cell => {
+                        handleOnCellPressed(cell);
                     }}
-                    state={b}
+                    state={state}
                     size={300}
                 />
             </SafeAreaView>
