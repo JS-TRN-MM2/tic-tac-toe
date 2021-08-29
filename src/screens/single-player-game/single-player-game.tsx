@@ -1,11 +1,9 @@
-import React, { ReactElement, useState, useEffect, useRef } from "react";
+import React, { ReactElement, useState, useEffect } from "react";
 import { BackHandler, SafeAreaView } from "react-native";
 import { GradientBackground } from "@components";
 import styles from "./single-player-game.styles";
 import { Board } from "@components";
-import { BoardState, isTerminal, getBestMove, isEmpty, Cell } from "@utils";
-import { Audio } from "expo-av";
-import * as Haptics from "expo-haptics";
+import { BoardState, isTerminal, getBestMove, isEmpty, Cell, useSounds } from "@utils";
 
 export default function Game(): ReactElement {
     // prettier-ignore
@@ -16,11 +14,7 @@ export default function Game(): ReactElement {
     ]);
     const [turn, setTurn] = useState<"HUMAN" | "BOT">(Math.random() < 0.5 ? "HUMAN" : "BOT");
     const [isHumanMaximizing, setIsHumanMaximizing] = useState<boolean>(true);
-    const popSoundRef = useRef<Audio.Sound | null>(null);
-    const pop2SoundRef = useRef<Audio.Sound | null>(null);
-    const winSoundRef = useRef<Audio.Sound | null>(null);
-    const lossSoundRef = useRef<Audio.Sound | null>(null);
-    const drawSoundRef = useRef<Audio.Sound | null>(null);
+    const playSound = useSounds();
 
     const gameResult = isTerminal(state);
 
@@ -30,10 +24,7 @@ export default function Game(): ReactElement {
         stateCopy[cell] = symbol;
         setState(stateCopy);
         try {
-            symbol === "x"
-                ? popSoundRef.current?.replayAsync()
-                : pop2SoundRef.current?.replayAsync();
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            symbol === "x" ? playSound("pop1") : playSound("pop2");
         } catch (error) {
             console.log(error);
         }
@@ -59,31 +50,16 @@ export default function Game(): ReactElement {
         if (gameResult) {
             const winner = getWinner(gameResult.winner);
             if (winner === "HUMAN") {
-                try {
-                    winSoundRef.current?.replayAsync();
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                } catch (error) {
-                    console.log(error);
-                }
-                alert("You won");
+                playSound("win");
+                alert("You won!");
             }
             if (winner === "BOT") {
-                try {
-                    lossSoundRef.current?.replayAsync();
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                } catch (error) {
-                    console.log(error);
-                }
-                alert("You loss.");
+                playSound("loss");
+                alert("You lost.");
             }
             if (winner === "DRAW") {
-                try {
-                    drawSoundRef.current?.replayAsync();
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                } catch (error) {
-                    console.log(error);
-                }
-                alert("Its a draw!");
+                playSound("draw");
+                alert("It's a draw.");
             }
         } else {
             // is it the computer's turn; if so,
@@ -104,38 +80,6 @@ export default function Game(): ReactElement {
             }
         }
     }, [state, turn]);
-
-    useEffect(() => {
-        // load sounds; unload it when you unmount screen
-        const popSoundObject = new Audio.Sound();
-        const pop2SoundObject = new Audio.Sound();
-        const winSoundObject = new Audio.Sound();
-        const lossSoundObject = new Audio.Sound();
-        const drawSoundObject = new Audio.Sound();
-
-        const loadSounds = async () => {
-            /* eslint-disable @typescript-eslint/no-var-requires */
-            await popSoundObject.loadAsync(require("@assets/pop_1.wav"));
-            popSoundRef.current = popSoundObject;
-            await pop2SoundObject.loadAsync(require("@assets/pop_2.wav"));
-            pop2SoundRef.current = pop2SoundObject;
-            await winSoundObject.loadAsync(require("@assets/win.mp3"));
-            winSoundRef.current = winSoundObject;
-            await lossSoundObject.loadAsync(require("@assets/loss.mp3"));
-            lossSoundRef.current = lossSoundObject;
-            await drawSoundObject.loadAsync(require("@assets/draw.mp3"));
-            drawSoundRef.current = drawSoundObject;
-        };
-        loadSounds();
-        return () => {
-            // unload sounds here
-            popSoundObject && popSoundObject.unloadAsync();
-            pop2SoundObject && pop2SoundObject.unloadAsync();
-            winSoundObject && winSoundObject.unloadAsync();
-            lossSoundObject && lossSoundObject.unloadAsync();
-            drawSoundObject && drawSoundObject.unloadAsync();
-        };
-    }, []);
 
     return (
         <GradientBackground>
